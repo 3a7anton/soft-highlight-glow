@@ -4,7 +4,7 @@ A modern, responsive LED lighting e-commerce website built with React, TypeScrip
 
 ## 🚀 Live Demo
 
-🔗 **[View Live Site](https://delve-golden-bites.netlify.app/)**
+🔗 **[View Live Site](https://soft-highlight.netlify.app/)**
 
 ## ✨ Features
 
