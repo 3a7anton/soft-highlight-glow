@@ -1,7 +1,10 @@
 
 import React from 'react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const Terms = () => {
+  usePageTitle('Terms of Service');
+  
   return (
     <div className="min-h-screen py-24">
       <div className="container mx-auto px-4">

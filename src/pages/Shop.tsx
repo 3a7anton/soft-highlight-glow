@@ -1,130 +1,369 @@
+import React, { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ShoppingCart, Star, Heart, Filter, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { ShoppingCart } from 'lucide-react';
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
-const Shop = () => {
-  const { toast } = useToast();
+// Product data - properly scoped at module level
+const products = [
+  {
+    id: 1,
+    name: "Soft Glow LED Strip",
+    description: "Premium LED strip with warm white glow, perfect for ambient lighting",
+    price: 29.99,
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop&auto=format",
+    category: "LED Strips",
+    rating: 4.8,
+    reviews: 124,
+    inStock: true,
+    featured: true
+  },
+  {
+    id: 2,
+    name: "RGB Color Changing Kit",
+    description: "16 million color options with smart app control and music sync",
+    price: 45.99,
+    image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop&auto=format",
+    category: "RGB Kits",
+    rating: 4.6,
+    reviews: 89,
+    inStock: true,
+    featured: true
+  },
+  {
+    id: 3,
+    name: "Smart Controller Hub",
+    description: "Central control hub for all your LED lighting systems",
+    price: 79.99,
+    image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=400&h=400&fit=crop&auto=format",
+    category: "Controllers",
+    rating: 4.9,
+    reviews: 156,
+    inStock: true,
+    featured: false
+  },
+  {
+    id: 4,
+    name: "Wireless Dimmer Switch",
+    description: "Touch-sensitive wireless dimmer with memory function",
+    price: 24.99,
+    image: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=400&h=400&fit=crop&auto=format",
+    category: "Accessories",
+    rating: 4.7,
+    reviews: 73,
+    inStock: true,
+    featured: false
+  },
+  {
+    id: 5,
+    name: "Outdoor Weather Strip",
+    description: "Waterproof LED strip perfect for outdoor installations",
+    price: 39.99,
+    image: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&h=400&fit=crop&auto=format",
+    category: "LED Strips",
+    rating: 4.5,
+    reviews: 45,
+    inStock: false,
+    featured: false
+  },
+  {
+    id: 6,
+    name: "Motion Sensor Light",
+    description: "Auto-activate LED strip with built-in motion detection",
+    price: 34.99,
+    image: "https://images.unsplash.com/photo-1562113530-57ba9cea8dc7?w=400&h=400&fit=crop&auto=format",
+    category: "Smart Sensors",
+    rating: 4.4,
+    reviews: 67,
+    inStock: true,
+    featured: true
+  }
+];
 
-  const addToCart = (productName: string) => {
+const categories = ["All", "LED Strips", "RGB Kits", "Controllers", "Accessories", "Smart Sensors"];
+
+export default function Shop() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const [selectedCategory, setSelectedCategory] = React.useState("All");
+  const [sortBy, setSortBy] = React.useState("featured");
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  useEffect(() => {
+    // Hero section animation
+    if (heroRef.current) {
+      gsap.fromTo(heroRef.current.children, 
+        {
+          opacity: 0,
+          y: 30
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: "power3.out"
+        }
+      );
+    }
+
+    // Products grid animation
+    if (productsRef.current) {
+      gsap.fromTo(productsRef.current.children,
+        {
+          opacity: 0,
+          y: 50,
+          scale: 0.9
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: productsRef.current,
+            start: "top 80%",
+            toggleActions: "play none none reverse"
+          }
+        }
+      );
+    }
+  }, []);
+
+  // Filter and sort products
+  const filteredProducts = React.useMemo(() => {
+    let filtered = products.filter(product => {
+      const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+
+    // Sort products
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "rating":
+          return b.rating - a.rating;
+        case "featured":
+        default:
+          return b.featured ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [selectedCategory, sortBy, searchTerm]);
+
+  const handleAddToCart = (product: typeof products[0]) => {
     toast({
-      title: "Added to cart",
-      description: `${productName} has been added to your cart.`,
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+
+  const handleAddToWishlist = (product: typeof products[0]) => {
+    toast({
+      title: "Added to Wishlist",
+      description: `${product.name} has been added to your wishlist.`,
     });
   };
 
   return (
-    <div className="min-h-screen py-24">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-white mb-4 text-center">Our Products</h1>
-        <p className="text-white/70 text-center max-w-3xl mx-auto mb-12">
-          Discover our range of innovative health solutions designed to improve your wellbeing 
-          while providing an intuitive and calming experience.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <div 
-              key={product.id}
-              className="bg-black/20 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10 gradient-border hover:translate-y-[-5px] transition-all duration-300"
-            >
-              <div className="h-64 bg-gradient-to-br from-brand-blue/30 to-brand-orange/30 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center">
-                  {product.icon}
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
+      {/* Hero Section */}
+      <section className="relative py-16 md:py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10"></div>
+        <div className="container mx-auto relative z-10" ref={heroRef}>
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Lighting Store
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-6 md:mb-8 leading-relaxed px-2">
+              Transform your space with premium LED lighting solutions
+            </p>
+            <div className="flex flex-col gap-4 justify-center items-center max-w-lg mx-auto">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
+                />
               </div>
-              
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-                <p className="text-white/70 mb-4">{product.description}</p>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-white">${product.price}</span>
-                  <Button 
-                    onClick={() => addToCart(product.name)}
-                    className="bg-white text-brand-blue hover:bg-white/90 transition-all"
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 w-full sm:w-auto">
+                <Filter className="mr-2 h-4 w-4" />
+                Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters Section */}
+      <section className="py-6 md:py-8 px-4 border-b border-gray-800">
+        <div className="container mx-auto">
+          <div className="flex flex-col gap-4 md:gap-6">
+            {/* Category Filter */}
+            <div className="order-1">
+              <h3 className="text-white text-sm font-medium mb-3 md:hidden">Categories:</h3>
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category)}
+                    className={selectedCategory === category 
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-xs sm:text-sm"
+                      : "border-gray-600 text-gray-300 hover:text-white hover:border-gray-500 text-xs sm:text-sm"
+                    }
                   >
-                    <ShoppingCart className="mr-2" size={16} />
-                    Add to Cart
+                    {category}
                   </Button>
-                </div>
+                ))}
               </div>
             </div>
-          ))}
+
+            {/* Sort Options */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 order-2">
+              <div className="flex items-center gap-4">
+                <span className="text-gray-300 text-sm">Sort by:</span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40 bg-gray-800/50 border-gray-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="text-gray-400 text-sm">
+                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div className="mt-16 text-center">
-          <p className="text-white/70 mb-6">
-            All products come with a 30-day money-back guarantee. 
-            Free shipping on orders over $50.
-          </p>
-          
-          <Button className="bg-white text-brand-blue hover:bg-white/90 transition-all glow">
-            View All Products
-          </Button>
+      </section>
+
+      {/* Products Grid */}
+      <section className="py-12 md:py-16 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4 text-white">
+              {selectedCategory === "All" ? "All Products" : selectedCategory}
+            </h2>
+          </div>
+
+          <div 
+            ref={productsRef}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8"
+          >
+            {filteredProducts.map((product) => (
+              <Card key={product.id} className="bg-gray-900/50 border-gray-700 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
+                <CardHeader className="relative p-4">
+                  {product.featured && (
+                    <Badge className="absolute top-2 right-2 bg-gradient-to-r from-purple-600 to-blue-600 text-xs">
+                      Featured
+                    </Badge>
+                  )}
+                  {!product.inStock && (
+                    <Badge variant="destructive" className="absolute top-2 left-2 text-xs">
+                      Out of Stock
+                    </Badge>
+                  )}
+                  <div className="aspect-square bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardTitle className="text-white group-hover:text-purple-400 transition-colors text-lg md:text-xl leading-tight">
+                    {product.name}
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                    {product.description}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="p-4 pt-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 md:h-4 md:w-4 fill-yellow-500 text-yellow-500" />
+                      <span className="text-yellow-500 text-xs md:text-sm font-medium">{product.rating}</span>
+                    </div>
+                    <span className="text-gray-500 text-xs md:text-sm">({product.reviews} reviews)</span>
+                  </div>
+                  <Separator className="bg-gray-700 mb-3" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl md:text-2xl font-bold text-white">
+                      ${product.price}
+                    </span>
+                    <Badge variant="secondary" className="bg-gray-700 text-gray-300 text-xs">
+                      {product.category}
+                    </Badge>
+                  </div>
+                </CardContent>
+
+                <CardFooter className="flex flex-col sm:flex-row gap-2 p-4 pt-0">
+                  <Button 
+                    onClick={() => handleAddToCart(product)}
+                    disabled={!product.inStock}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-sm"
+                  >
+                    <ShoppingCart className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                    {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleAddToWishlist(product)}
+                    className="border-gray-600 text-gray-300 hover:text-white hover:border-gray-500 w-full sm:w-auto"
+                  >
+                    <Heart className="h-3 w-3 md:h-4 md:w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-12 md:py-16">
+              <p className="text-gray-400 text-base md:text-lg mb-6">No products found matching your criteria.</p>
+              <Button 
+                onClick={() => {
+                  setSelectedCategory("All");
+                  setSearchTerm("");
+                }}
+                variant="outline"
+                className="border-gray-600 text-gray-300 hover:text-white hover:border-gray-500"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
-};
-
-// Product data
-const products = [
-  {
-    id: 1,
-    name: "Wellness Tracker Pro",
-    description: "Our flagship health monitoring device with advanced sensors and an intuitive interface.",
-    price: 149.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-    </svg>
-  },
-  {
-    id: 2,
-    name: "Calm Mind App",
-    description: "A meditation and mindfulness app designed to reduce stress and improve focus.",
-    price: 4.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-    </svg>
-  },
-  {
-    id: 3,
-    name: "Health Dashboard",
-    description: "A comprehensive wellness dashboard that integrates with all your health apps and devices.",
-    price: 29.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
-  },
-  {
-    id: 4,
-    name: "Sleep Enhancer",
-    description: "A device designed to monitor and improve your sleep patterns for better rest.",
-    price: 89.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-    </svg>
-  },
-  {
-    id: 5,
-    name: "Nutrition Analyzer",
-    description: "An app that helps you track and optimize your nutrition for better health.",
-    price: 3.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z" />
-    </svg>
-  },
-  {
-    id: 6,
-    name: "Fitness Companion",
-    description: "A personal trainer in your pocket, designed to help you achieve your fitness goals.",
-    price: 59.99,
-    icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-12 h-12 text-white">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-    </svg>
-  }
-];
-
-export default Shop;
+}

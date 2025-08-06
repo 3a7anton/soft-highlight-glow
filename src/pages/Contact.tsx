@@ -2,8 +2,11 @@
 import React from 'react';
 import ContactForm from '../components/ContactForm';
 import { MapPin, Mail, Phone, Clock } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const Contact = () => {
+  usePageTitle('Contact');
+  
   return (
     <div className="min-h-screen py-24">
       <div className="container mx-auto px-4">
